@@ -1,23 +1,170 @@
-from player import Player
 import random
+from dataclasses import dataclass, field
 
+from cards import ALL_ROLES, Card, Role
+from player import Player
+
+
+@dataclass
 class Game:
-    def __init__(self, num_players = 4):
-        self.deck = self.initialize_deck()
-        self.players = self.initialize_players(num_players)
-        self.log = []
-        self.current_player = 0
-        self.is_over = False
+    players: list[Player]
+    deck: list[Card] = field(default_factory=list)
+    current_player: int = 0
 
-    def initialize_deck(self):
-        deck = ["Duke", "Assassin", "Captain", "Ambassador", "Contessa"] * 3
-        random.shuffle(deck)
-        return deck
+    def __post_init__(self):
+        if len(self.players) < 2:
+            raise ValueError("Coup requires at least 2 players.")
 
-    def initialize_players(self, num_players):
-        players = []
-        for _ in range(num_players):
-            cards = [self.deck.pop(), self.deck.pop()]
-            player = Player(cards)
-            players.append(player)
-        return players
+        self._create_deck()
+        self._deal_cards()
+
+    # ------------------------------------------------------------------
+    # Setup
+    # ------------------------------------------------------------------
+
+    def _create_deck(self):
+        self.deck = [
+            Card(role)
+            for role in ALL_ROLES
+            for _ in range(3)
+        ]
+        random.shuffle(self.deck)
+
+    def _deal_cards(self):
+        for player in self.players:
+            player.coins = 2
+            player.cards = [
+                self.deck.pop(),
+                self.deck.pop(),
+            ]
+
+    # ------------------------------------------------------------------
+    # Game state
+    # ------------------------------------------------------------------
+
+    @property
+    def current(self) -> Player:
+        return self.players[self.current_player]
+
+    @property
+    def alive_players(self) -> list[Player]:
+        return [p for p in self.players if p.alive]
+
+    @property
+    def winner(self) -> Player | None:
+        alive = self.alive_players
+        return alive[0] if len(alive) == 1 else None
+
+    def state_for(self, player_id: str | None = None) -> dict:
+        """
+        Return a serializable view of the game.
+
+        If player_id is provided, that player's cards are visible
+        while everybody else's cards remain hidden.
+        """
+        state = {
+            "current_player": self.current.id,
+            "players": [],
+        }
+
+        for player in self.players:
+            player_state = {
+                "id": player.id,
+                "name": player.name,
+                "coins": player.coins,
+                "influence": player.influence,
+                "cards": [],
+            }
+
+            for card in player.cards:
+                visible = (
+                    player.id == player_id
+                    or card.revealed
+                )
+
+                player_state["cards"].append(
+                    card.role.value if visible else "hidden"
+                )
+
+            state["players"].append(player_state)
+
+        return state
+
+    # ------------------------------------------------------------------
+    # Actions
+    # ------------------------------------------------------------------
+
+    def income(self, player_id: str):
+        player = self._require_current_player(player_id)
+
+        if player.coins >= 10:
+            raise ValueError("Player must coup when they have 10+ coins.")
+
+        player.coins += 1
+        self._end_turn()
+
+    def foreign_aid(self, player_id: str):
+        player = self._require_current_player(player_id)
+
+        if player.coins >= 10:
+            raise ValueError("Player must coup when they have 10+ coins.")
+
+        player.coins += 2
+        self._end_turn()
+
+    def coup(self, player_id: str, target_id: str):
+        player = self._require_current_player(player_id)
+        target = self._get_player(target_id)
+
+        if player.coins < 7:
+            raise ValueError("Coup costs 7 coins.")
+
+        if not target.alive:
+            raise ValueError("Target is eliminated.")
+
+        if target.id == player.id:
+            raise ValueError("Cannot coup yourself.")
+
+        player.coins -= 7
+
+        # Prototype: target automatically loses first influence.
+        target.lose_influence()
+
+        self._end_turn()
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+
+    def _get_player(self, player_id: str) -> Player:
+        for player in self.players:
+            if player.id == player_id:
+                return player
+
+        raise ValueError(f"Unknown player: {player_id}")
+
+    def _require_current_player(self, player_id: str) -> Player:
+        if self.current.id != player_id:
+            raise ValueError("It is not this player's turn.")
+
+        if not self.current.alive:
+            raise ValueError("Player is eliminated.")
+
+        return self.current
+
+    def _end_turn(self):
+        if self.winner is not None:
+            return
+
+        start = self.current_player
+
+        while True:
+            self.current_player = (
+                self.current_player + 1
+            ) % len(self.players)
+
+            if self.players[self.current_player].alive:
+                break
+
+            if self.current_player == start:
+                break

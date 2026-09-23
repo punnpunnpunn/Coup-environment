@@ -1,24 +1,43 @@
+from dataclasses import dataclass, field
+
+from cards import Card
+
+
+@dataclass
 class Player:
-    def __init__(self, cards):
-        self.cards = cards
-        self.coins = 2
+    id: str
+    name: str
+    coins: int = 2
+    cards: list[Card] = field(default_factory=list)
 
-    def __str__(self):
-        return f"Player: {self.cards}, Coins: {self.coins}"
+    @property
+    def alive(self):
+        return any(not card.revealed for card in self.cards)
 
-    def lose_card(self, card):
-        if card in self.cards:
-            self.cards.remove(card)
-        else:
-            raise ValueError(f"Player does not have the card: {card}")
+    @property
+    def influence(self):
+        return sum(not card.revealed for card in self.cards)
 
-    def gain_coins(self, amount):
-        self.coins += amount
+    def reveal_card(self, index: int):
+        if index < 0 or index >= len(self.cards):
+            raise ValueError("Invalid card index.")
 
-    def lose_coins(self, amount):
-        self.coins -= amount
-        if self.coins < 0:
-            self.coins = 0
+        card = self.cards[index]
 
-    def choose_action(self, action):
-        pass
+        if card.revealed:
+            raise ValueError("That card is already revealed.")
+
+        card.revealed = True
+        return card
+
+    def lose_influence(self):
+        """
+        Prototype behavior: automatically reveal the first
+        unrevealed card. A real UI can ask the human which
+        card to reveal later.
+        """
+        for i, card in enumerate(self.cards):
+            if not card.revealed:
+                return self.reveal_card(i)
+
+        raise ValueError("Player has no remaining influence.")
