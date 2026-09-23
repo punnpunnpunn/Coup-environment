@@ -132,6 +132,62 @@ class Game:
 
         self._end_turn()
 
+    def tax(self, player_id: str):
+        player = self._require_current_player(player_id)
+
+        if player.coins >= 10:
+            raise ValueError("Player must coup when they have 10+ coins.")
+
+        player.coins += 3
+        self._end_turn()
+
+    def assassinate(self, player_id: str, target_id: str):
+        player = self._require_current_player(player_id)
+        target = self._get_player(target_id)
+
+        if player.coins < 3:
+            raise ValueError("Assassination costs 3 coins.")
+
+        if not target.alive:
+            raise ValueError("Target is eliminated.")
+
+        if target.id == player.id:
+            raise ValueError("Cannot assassinate yourself.")
+
+        player.coins -= 3
+
+        # Prototype: target automatically loses first influence.
+        target.lose_influence()
+
+        self._end_turn()
+
+    def exchange(self, player_id: str):
+        player = self._require_current_player(player_id)
+
+        # Prototype: just draw two cards and return them to the deck.
+        drawn = [self.deck.pop(), self.deck.pop()]
+        print(f"{player.name} draws {drawn[0].role} and {drawn[1].role} for exchange.")
+        self.deck.extend(drawn)
+        random.shuffle(self.deck)
+
+        self._end_turn()
+
+    def steal(self, player_id: str, target_id: str):
+        player = self._require_current_player(player_id)
+        target = self._get_player(target_id)
+
+        if not target.alive:
+            raise ValueError("Target is eliminated.")
+
+        if target.id == player.id:
+            raise ValueError("Cannot steal from yourself.")
+
+        stolen = min(2, target.coins)
+        target.coins -= stolen
+        player.coins += stolen
+
+        self._end_turn()
+
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------

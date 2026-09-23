@@ -4,10 +4,10 @@ from player import Player
 
 def main():
     players = [
-        Player("p1", "Player 1"),
-        Player("p2", "Player 2"),
-        Player("p3", "Player 3"),
-        Player("p4", "Player 4"),
+        Player("1", "Player 1"),
+        Player("2", "Player 2"),
+        Player("3", "Player 3"),
+        Player("4", "Player 4"),
     ]
 
     game = Game(players)
@@ -19,6 +19,10 @@ def main():
         print(f"{player.name}'s turn")
         print(f"Coins: {player.coins}")
         print(f"Influence: {player.influence}")
+        print("Cards: " + ", ".join(
+            card.role.value if not card.revealed else f"{card.role.value} (revealed)"
+            for card in player.cards
+        ))
 
         for p in game.players:
             print(
@@ -27,7 +31,7 @@ def main():
                 f"{p.influence} influence"
             )
 
-        action = input("\nAction [income/aid/coup]: ").strip().lower()
+        action = input("\nAction [income/aid/coup/duke/assassin/ambassador/captain]: ").strip().lower()
 
         try:
             if action == "income":
@@ -39,6 +43,20 @@ def main():
             elif action == "coup":
                 target = input("Target: ").strip()
                 game.coup(player.id, target)
+
+            elif action == "duke":
+                game.tax(player.id)
+
+            elif action == "assassin":
+                target = input("Target: ").strip()
+                game.assassinate(player.id, target)
+
+            elif action == "ambassador":
+                game.exchange(player.id)
+
+            elif action == "captain":
+                target = input("Target: ").strip()
+                game.steal(player.id, target)
 
             else:
                 print("Unknown action.")
