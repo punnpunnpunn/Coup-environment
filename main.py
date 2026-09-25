@@ -31,38 +31,7 @@ def main():
                 f"{p.influence} influence"
             )
 
-        action = input("\nAction [income/aid/coup/duke/assassin/ambassador/captain]: ").strip().lower()
-
-        try:
-            if action == "income":
-                game.income(player.id)
-
-            elif action == "aid":
-                game.foreign_aid(player.id)
-
-            elif action == "coup":
-                target = input("Target: ").strip()
-                game.coup(player.id, target)
-
-            elif action == "duke":
-                game.tax(player.id)
-
-            elif action == "assassin":
-                target = input("Target: ").strip()
-                game.assassinate(player.id, target)
-
-            elif action == "ambassador":
-                game.exchange(player.id)
-
-            elif action == "captain":
-                target = input("Target: ").strip()
-                game.steal(player.id, target)
-
-            else:
-                print("Unknown action.")
-
-        except ValueError as e:
-            print(f"Invalid action: {e}")
+        player.choose_action(game)
 
     print(f"\nWinner: {game.winner.name}")
 

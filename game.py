@@ -188,6 +188,14 @@ class Game:
 
         self._end_turn()
 
+    def challenge(self, challenger_id: str, player_id: str, role: Role):
+        challenger = self._get_player(challenger_id)
+        player = self._get_player(player_id)
+
+        # Prototype: just print a message and end the turn.
+        print(f"{challenger.name} challenges {player.name}'s {role}.")
+        #self._end_turn()
+
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
