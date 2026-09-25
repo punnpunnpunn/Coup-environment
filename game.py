@@ -127,7 +127,6 @@ class Game:
 
         player.coins -= 7
 
-        # Prototype: target automatically loses first influence.
         target.lose_influence()
 
         self._end_turn()
@@ -156,7 +155,6 @@ class Game:
 
         player.coins -= 3
 
-        # Prototype: target automatically loses first influence.
         target.lose_influence()
 
         self._end_turn()
@@ -164,7 +162,6 @@ class Game:
     def exchange(self, player_id: str):
         player = self._require_current_player(player_id)
 
-        # Prototype: just draw two cards and return them to the deck.
         drawn = [self.deck.pop(), self.deck.pop()]
         print(f"{player.name} draws {drawn[0].role.value} and {drawn[1].role.value} for exchange.")
         cards = player.cards + drawn
@@ -181,7 +178,7 @@ class Game:
         print(f"{player.name} keeps {', '.join(card.role.value for card in player.cards)} and returns the rest to the deck.")
         self.deck.extend(cards[i - 1] for i in range(1, len(cards) + 1) if i not in choice)
         random.shuffle(self.deck)
-        
+
         self._end_turn()
 
     def steal(self, player_id: str, target_id: str):

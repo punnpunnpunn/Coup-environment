@@ -63,13 +63,25 @@ class Player:
 
             elif action == "assassin":
                 target = input("Target: ").strip()
+                challenge = input("Challenge? [y/n]: ").strip().lower()
+                if challenge == "y":
+                    challenge_player_id = input("Challenger ID: ").strip()
+                    game.challenge(challenge_player_id, self.id, "assassin")
                 game.assassinate(self.id, target)
 
             elif action == "ambassador":
+                challenge = input("Challenge? [y/n]: ").strip().lower()
+                if challenge == "y":
+                    challenge_player_id = input("Challenger ID: ").strip()
+                    game.challenge(challenge_player_id, self.id, "ambassador")
                 game.exchange(self.id)
 
             elif action == "captain":
                 target = input("Target: ").strip()
+                challenge = input("Challenge? [y/n]: ").strip().lower()
+                if challenge == "y":
+                    challenge_player_id = input("Challenger ID: ").strip()
+                    game.challenge(challenge_player_id, self.id, "captain")
                 game.steal(self.id, target)
 
             else:
@@ -90,17 +102,20 @@ class Player:
         if card.revealed:
             raise ValueError("That card is already revealed.")
 
+        print(f"{self.name} reveals {card.role.value}.")
+
         card.revealed = True
         return card
 
     def lose_influence(self):
-        """
-        Prototype behavior: automatically reveal the first
-        unrevealed card. A real UI can ask the human which
-        card to reveal later.
-        """
-        for i, card in enumerate(self.cards):
-            if not card.revealed:
-                return self.reveal_card(i)
-
-        raise ValueError("Player has no remaining influence.")
+        if self.influence == 0:
+            raise ValueError("Player has no remaining influence.")
+        if self.influence == 1:
+            print(f"{self.name} has only one influence left and must reveal it.")
+            return self.reveal_card(next(i for i, card in enumerate(self.cards) if not card.revealed))
+        for i in range(self.influence):
+            print(f"  [{i + 1}] {self.cards[i].role.value}")
+        choice = input(f"Choose a card to reveal [1-{self.influence}]: ").strip()
+        while not choice.isdigit() or int(choice) < 1 or int(choice) > self.influence:
+            choice = input(f"Invalid choice. Choose a card to reveal [1-{self.influence}]: ").strip()
+        return self.reveal_card(int(choice) - 1)
