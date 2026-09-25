@@ -166,10 +166,22 @@ class Game:
 
         # Prototype: just draw two cards and return them to the deck.
         drawn = [self.deck.pop(), self.deck.pop()]
-        print(f"{player.name} draws {drawn[0].role} and {drawn[1].role} for exchange.")
-        self.deck.extend(drawn)
+        print(f"{player.name} draws {drawn[0].role.value} and {drawn[1].role.value} for exchange.")
+        cards = player.cards + drawn
+        for i in range(len(cards)):
+            print(f"  [{i + 1}] {cards[i].role.value}")
+        choice = []
+        for i in range(len(player.cards)):
+            chosen = " "
+            while not chosen.isdigit() or int(chosen) < 1 or int(chosen) > len(cards) or int(chosen) in choice:
+                chosen = input(f"Choose card {i + 1} to keep [1-{len(player.cards) + 2}]: ").strip()
+            choice.append(int(chosen))
+            print(f"  Chosen: {cards[int(chosen) - 1].role.value}")
+        player.cards = [cards[i - 1] for i in choice]
+        print(f"{player.name} keeps {', '.join(card.role.value for card in player.cards)} and returns the rest to the deck.")
+        self.deck.extend(cards[i - 1] for i in range(1, len(cards) + 1) if i not in choice)
         random.shuffle(self.deck)
-
+        
         self._end_turn()
 
     def steal(self, player_id: str, target_id: str):
