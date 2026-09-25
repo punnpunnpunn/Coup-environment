@@ -201,9 +201,30 @@ class Game:
         challenger = self._get_player(challenger_id)
         player = self._get_player(player_id)
 
-        # Prototype: just print a message and end the turn.
-        print(f"{challenger.name} challenges {player.name}'s {role}.")
-        #self._end_turn()
+        if player.id == challenger.id:
+            raise ValueError("Cannot challenge yourself.")
+        if not challenger.alive:
+            raise ValueError("Challenger is eliminated.")
+        if role in [card.role for card in player.cards] and not any(card.revealed for card in player.cards if card.role == role):
+            # Player has the role and can reveal it.
+            revealed_card = next(card for card in player.cards if card.role == role)
+            revealed_card.revealed = True
+            print(f"{player.name} reveals {revealed_card.role.value}.")
+            # Player draws a new card to replace the revealed one.
+            new_card = self.deck.pop()
+            player.cards.remove(revealed_card)
+            player.cards.append(new_card)
+            self.deck.append(revealed_card)
+            random.shuffle(self.deck)
+            print(f"{player.name} draws a new card to replace the revealed one.")
+            print(player.name + "'s cards: " + ", ".join(
+                card.role.value if not card.revealed else f"{card.role.value} (revealed)"
+                for card in player.cards
+            ))
+            # Challenger loses influence.
+            challenger.lose_influence()
+        else:
+            player.lose_influence()
 
     # ------------------------------------------------------------------
     # Helpers
