@@ -2,8 +2,8 @@ import random
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from cards import ALL_ROLES, Card, Role
-from player import Player
+from src.cards import ALL_ROLES, Card, Role
+from src.player import Player
 
 
 DecisionProvider = Callable[[str, dict[str, object]], object]

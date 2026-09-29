@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from cards import Card
+from src.cards import Card
 
 
 @dataclass
