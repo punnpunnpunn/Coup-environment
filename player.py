@@ -19,7 +19,7 @@ class Player:
         return sum(not card.revealed for card in self.cards)
 
     def choose_action(self, game):
-        valid_actions = ["Income", "Aid"]
+        valid_actions = ["Income", "Foreign Aid"]
 
         if self.coins >= 7:
             valid_actions.append("Coup")
@@ -44,49 +44,10 @@ class Player:
                 action = valid_actions[int(action) - 1].lower()
 
         try:
-            if action == "income":
-                game.income(self.id)
-
-            elif action == "aid":
-                game.foreign_aid(self.id)
-
-            elif action == "coup":
-                target = input("Target: ").strip()
-                game.coup(self.id, target)
-
-            elif action == "duke":
-                challenge = input("Challenge? [y/n]: ").strip().lower()
-                if challenge == "y":
-                    challenge_player_id = input("Challenger ID: ").strip()
-                    game.challenge(challenge_player_id, self.id, "duke")
-                game.tax(self.id)
-
-            elif action == "assassin":
-                target = input("Target: ").strip()
-                challenge = input("Challenge? [y/n]: ").strip().lower()
-                if challenge == "y":
-                    challenge_player_id = input("Challenger ID: ").strip()
-                    game.challenge(challenge_player_id, self.id, "assassin")
-                game.assassinate(self.id, target)
-
-            elif action == "ambassador":
-                challenge = input("Challenge? [y/n]: ").strip().lower()
-                if challenge == "y":
-                    challenge_player_id = input("Challenger ID: ").strip()
-                    game.challenge(challenge_player_id, self.id, "ambassador")
-                game.exchange(self.id)
-
-            elif action == "captain":
-                target = input("Target: ").strip()
-                challenge = input("Challenge? [y/n]: ").strip().lower()
-                if challenge == "y":
-                    challenge_player_id = input("Challenger ID: ").strip()
-                    game.challenge(challenge_player_id, self.id, "captain")
-                game.steal(self.id, target)
-
-            else:
-                print("Unknown action.")
-                self.choose_action(game)
+            target_id = None
+            if action in ("coup", "assassin", "captain"):
+                target_id = input("Target: ").strip()
+            game.perform_action(self.id, action, target_id)
 
         except ValueError as e:
             print(f"Invalid action: {e}")
