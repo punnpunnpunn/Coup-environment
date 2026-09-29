@@ -14,6 +14,7 @@ class Game:
     players: list[Player]
     deck: list[Card] = field(default_factory=list)
     current_player: int = 0
+    log: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         if not 2 <= len(self.players) <= 6:
@@ -71,6 +72,7 @@ class Game:
         state = {
             "current_player": self.current.id,
             "winner": self.winner.id if self.winner is not None else None,
+            "log": list(self.log),
             "players": [],
         }
 
@@ -110,6 +112,7 @@ class Game:
     ) -> dict:
         deck_before = list(self.deck)
         current_before = self.current_player
+        log_length_before = len(self.log)
         players_before = [
             (player, player.coins, list(player.cards)) for player in self.players
         ]
@@ -124,6 +127,7 @@ class Game:
         except Exception:
             self.current_player = current_before
             self.deck[:] = deck_before
+            del self.log[log_length_before:]
             for player, coins, cards in players_before:
                 player.coins = coins
                 player.cards[:] = cards
@@ -179,30 +183,59 @@ class Game:
         if action == "assassinate" and actor.coins < 3:
             raise ValueError("Assassination costs 3 coins.")
 
+        descriptions = {
+            "income": "takes Income",
+            "foreign_aid": "claims Foreign Aid",
+            "coup": "launches a Coup",
+            "tax": "claims Duke for Tax",
+            "assassinate": "claims Assassin",
+            "exchange": "claims Ambassador to Exchange",
+            "steal": "claims Captain to Steal",
+        }
+        if target is not None:
+            descriptions[action] += f" against {target.name}"
+        self._record_event(f"{actor.name} {descriptions[action]}.")
+
         if action == "income":
             actor.coins += 1
+            self._record_event(f"{actor.name} gains 1 coin (now {actor.coins}).")
         elif action == "foreign_aid":
             if not self._check_block(actor, action, target, decision_provider):
                 actor.coins += 2
+                self._record_event(f"{actor.name} gains 2 coins (now {actor.coins}).")
         elif action == "coup":
             actor.coins -= 7
+            self._record_event(f"{actor.name} pays 7 coins (now {actor.coins}).")
             self._lose_influence(target, decision_provider)
         elif action == "tax":
-            if not self._check_challenge(actor, Role.DUKE, decision_provider):
+            if self._check_challenge(actor, Role.DUKE, decision_provider):
+                self._record_event("The Tax claim is disproven; no coins are taken.")
+            else:
                 actor.coins += 3
+                self._record_event(f"{actor.name} gains 3 Tax coins (now {actor.coins}).")
         elif action == "assassinate":
             if not self._check_challenge(actor, Role.ASSASSIN, decision_provider):
                 blocked = target.alive and self._check_block(
                     actor, action, target, decision_provider
                 )
                 actor.coins -= 3
+                self._record_event(
+                    f"{actor.name} pays 3 coins for the assassination (now {actor.coins})."
+                )
                 if not blocked and target.alive:
                     self._lose_influence(target, decision_provider)
+            else:
+                self._record_event("The assassination claim fails; no fee is paid.")
         elif action == "exchange":
-            if not self._check_challenge(actor, Role.AMBASSADOR, decision_provider):
+            if self._check_challenge(actor, Role.AMBASSADOR, decision_provider):
+                self._record_event("The Exchange claim is disproven; no cards are exchanged.")
+            else:
                 self._exchange(actor, decision_provider)
+                self._record_event(f"{actor.name} exchanges cards with the Court.")
         elif action == "steal":
-            if not self._check_challenge(actor, Role.CAPTAIN, decision_provider):
+            if self._check_challenge(actor, Role.CAPTAIN, decision_provider):
+                self._record_event("The Steal claim is disproven; no coins are transferred.")
+            else:
                 if (
                     target.alive
                     and not self._check_block(actor, action, target, decision_provider)
@@ -211,6 +244,13 @@ class Game:
                     stolen = min(2, target.coins)
                     target.coins -= stolen
                     actor.coins += stolen
+                    self._record_event(
+                        f"{actor.name} steals {stolen} coin(s) from {target.name}."
+                    )
+                elif not target.alive:
+                    self._record_event(
+                        f"{target.name} was eliminated during the challenge; the steal does not resolve."
+                    )
 
         self._end_turn()
         return self.state_for(player_id)
@@ -238,7 +278,13 @@ class Game:
             if not isinstance(should_challenge, bool):
                 raise ValueError("Challenge decisions must be booleans.")
             if should_challenge:
+                self._record_event(
+                    f"{challenger.name} challenges {claimant.name}'s {role.value} claim."
+                )
                 return self._challenge(challenger, claimant, role, decision_provider)
+            self._record_event(
+                f"{challenger.name} does not challenge {claimant.name}'s {role.value} claim."
+            )
         return False
 
     def _challenge(
@@ -257,16 +303,22 @@ class Game:
             None,
         )
         if revealed_card is None:
+            self._record_event(
+                f"{claimant.name} cannot prove the {role.value} claim."
+            )
             self._lose_influence(claimant, decision_provider)
             return True
 
-        print(f"{claimant.name} reveals {revealed_card.role.value}.")
+        self._record_event(
+            f"{claimant.name} proves the {role.value} claim and returns that card to the Court."
+        )
         claimant.cards.remove(revealed_card)
         revealed_card.revealed = False
         self.deck.append(revealed_card)
         random.shuffle(self.deck)
         replacement = self.deck.pop()
         claimant.cards.append(replacement)
+        self._record_event(f"{claimant.name} draws a hidden replacement card.")
         self._lose_influence(challenger, decision_provider)
         return False
 
@@ -303,6 +355,7 @@ class Game:
             },
         )
         if selection is None:
+            self._record_event(f"No one blocks {action.replace('_', ' ')}.")
             return False
         if not isinstance(selection, dict):
             raise ValueError("A block decision must be None or a block mapping.")
@@ -322,7 +375,15 @@ class Game:
             if block_role.value not in roles:
                 raise ValueError("That role cannot block this action.")
 
-        return not self._check_challenge(blocker, block_role, decision_provider)
+        self._record_event(
+            f"{blocker.name} claims {block_role.value} to block {action.replace('_', ' ')}."
+        )
+        blocked = not self._check_challenge(blocker, block_role, decision_provider)
+        if blocked:
+            self._record_event(f"{blocker.name}'s block succeeds.")
+        else:
+            self._record_event(f"{blocker.name}'s block is disproven; the action continues.")
+        return blocked
 
     def _lose_influence(
         self,
@@ -330,7 +391,11 @@ class Game:
         decision_provider: DecisionProvider | None,
     ):
         if player.influence <= 1:
-            return player.lose_influence()
+            card = player.lose_influence()
+            self._record_event(
+                f"{player.name} loses influence, revealing {card.role.value}."
+            )
+            return card
 
         active_cards = [
             (index, card)
@@ -355,7 +420,11 @@ class Game:
             or card_index not in valid_indices
         ):
             raise ValueError("Invalid influence card index.")
-        return player.reveal_card(card_index)
+        card = player.reveal_card(card_index)
+        self._record_event(
+            f"{player.name} loses influence, revealing {card.role.value}."
+        )
+        return card
 
     def _exchange(
         self,
@@ -403,6 +472,9 @@ class Game:
             card for index, card in enumerate(cards) if index not in kept_indices
         )
         random.shuffle(self.deck)
+
+    def _record_event(self, message: str):
+        self.log.append(message)
 
     def _decide(
         self,
@@ -503,6 +575,7 @@ class Game:
         winner = self.winner
         if winner is not None:
             self.current_player = self.players.index(winner)
+            self._record_event(f"{winner.name} wins the game.")
             return
 
         start = self.current_player
@@ -513,6 +586,7 @@ class Game:
             ) % len(self.players)
 
             if self.players[self.current_player].alive:
+                self._record_event(f"It is now {self.current.name}'s turn.")
                 break
 
             if self.current_player == start:

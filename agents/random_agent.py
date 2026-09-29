@@ -1,17 +1,23 @@
 import random
 
 from src.game import Game
+from src.player import Player
 
 
-class RandomAgent:
+class RandomAgent(Player):
 	"""An agent that chooses actions and responses uniformly at random."""
 
-	def __init__(self, player_id: str, seed: int | None = None):
-		self.player_id = player_id
+	def __init__(
+		self,
+		player_id: str,
+		name: str | None = None,
+		seed: int | None = None,
+	):
+		super().__init__(player_id, name or player_id)
 		self.rng = random.Random(seed)
 
-	def play_turn(self, game: Game) -> dict:
-		if game.current.id != self.player_id:
+	def choose_action(self, game: Game) -> dict:
+		if game.current.id != self.id:
 			raise ValueError("It is not this agent's turn.")
 
 		player = game.current
@@ -30,12 +36,12 @@ class RandomAgent:
 			opponents = [
 				opponent
 				for opponent in game.alive_players
-				if opponent.id != self.player_id
+				if opponent.id != self.id
 			]
 			target_id = self.rng.choice(opponents).id
 
 		return game.perform_action(
-			self.player_id,
+			self.id,
 			action,
 			target_id=target_id,
 			decision_provider=self.decide,

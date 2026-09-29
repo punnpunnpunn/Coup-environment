@@ -63,8 +63,6 @@ class Player:
         if card.revealed:
             raise ValueError("That card is already revealed.")
 
-        print(f"{self.name} reveals {card.role.value}.")
-
         card.revealed = True
         return card
 

@@ -10,15 +10,16 @@ from agents.random_agent import RandomAgent
 from src.game import Game
 from src.player import Player
 
-players = [Player(f"p{i}", f"Player {i}") for i in range(4)]
+players = [
+    Player("1", "Human player"),
+    RandomAgent("2", "Random agent", seed=2),
+    Player("3", "Another human"),
+    RandomAgent("4", "Second random agent", seed=4),
+]
 game = Game(players)
-agents = {
-    player.id: RandomAgent(player.id, seed=index)
-    for index, player in enumerate(players)
-}
 
 while game.winner is None:
-    state = agents[game.current.id].play_turn(game)
+    game.current.choose_action(game)
 
 print(f"Winner: {game.winner.name}")
 ```
