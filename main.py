@@ -1,4 +1,5 @@
 from agents.always_duke import AlwaysDuke
+from agents.honest_random import HonestRandom
 from agents.random_agent import RandomAgent
 from agents.passive_agent import PassiveAgent
 from src.game import Game
@@ -8,13 +9,10 @@ from src.player import Player
 def main():
     players = [
         # Player("1", "Player 1"),
-        # Player("2", "Player 2"),
-        # Player("3", "Player 3"),
-        # Player("4", "Player 4"),
         PassiveAgent("1", "Passive Agent"),
-        RandomAgent("2", "Random Agent 1", seed=2),
+        RandomAgent("2", "Random Agent"),
         AlwaysDuke("3", "Always Duke"),
-        AlwaysDuke("4", "Also Always Duke"),
+        HonestRandom("4", "HonestRandom"),
     ]
 
     game = Game(players)
