@@ -16,8 +16,10 @@ class Game:
     current_player: int = 0
 
     def __post_init__(self):
-        if len(self.players) < 2:
-            raise ValueError("Coup requires at least 2 players.")
+        if not 2 <= len(self.players) <= 6:
+            raise ValueError("Coup requires 2-6 players so the Court can support exchanges.")
+        if len({player.id for player in self.players}) != len(self.players):
+            raise ValueError("Player IDs must be unique.")
 
         self._create_deck()
         self._deal_cards()
@@ -68,6 +70,7 @@ class Game:
         """
         state = {
             "current_player": self.current.id,
+            "winner": self.winner.id if self.winner is not None else None,
             "players": [],
         }
 
@@ -99,6 +102,36 @@ class Game:
     # ------------------------------------------------------------------
 
     def perform_action(
+        self,
+        player_id: str,
+        action: str,
+        target_id: str | None = None,
+        decision_provider: DecisionProvider | None = None,
+    ) -> dict:
+        deck_before = list(self.deck)
+        current_before = self.current_player
+        players_before = [
+            (player, player.coins, list(player.cards)) for player in self.players
+        ]
+        card_states = {card: card.revealed for card in self.deck}
+        for _player, _coins, cards in players_before:
+            card_states.update({card: card.revealed for card in cards})
+
+        try:
+            return self._resolve_action(
+                player_id, action, target_id, decision_provider
+            )
+        except Exception:
+            self.current_player = current_before
+            self.deck[:] = deck_before
+            for player, coins, cards in players_before:
+                player.coins = coins
+                player.cards[:] = cards
+            for card, revealed in card_states.items():
+                card.revealed = revealed
+            raise
+
+    def _resolve_action(
         self,
         player_id: str,
         action: str,
@@ -159,7 +192,9 @@ class Game:
                 actor.coins += 3
         elif action == "assassinate":
             if not self._check_challenge(actor, Role.ASSASSIN, decision_provider):
-                blocked = self._check_block(actor, action, target, decision_provider)
+                blocked = target.alive and self._check_block(
+                    actor, action, target, decision_provider
+                )
                 actor.coins -= 3
                 if not blocked and target.alive:
                     self._lose_influence(target, decision_provider)
@@ -168,13 +203,17 @@ class Game:
                 self._exchange(actor, decision_provider)
         elif action == "steal":
             if not self._check_challenge(actor, Role.CAPTAIN, decision_provider):
-                if not self._check_block(actor, action, target, decision_provider):
+                if (
+                    target.alive
+                    and not self._check_block(actor, action, target, decision_provider)
+                    and target.alive
+                ):
                     stolen = min(2, target.coins)
                     target.coins -= stolen
                     actor.coins += stolen
 
         self._end_turn()
-        return self.state_for()
+        return self.state_for(player_id)
 
     def _check_challenge(
         self,
@@ -310,7 +349,11 @@ class Game:
             },
         )
         valid_indices = {index for index, _card in active_cards}
-        if isinstance(card_index, bool) or card_index not in valid_indices:
+        if (
+            isinstance(card_index, bool)
+            or not isinstance(card_index, int)
+            or card_index not in valid_indices
+        ):
             raise ValueError("Invalid influence card index.")
         return player.reveal_card(card_index)
 
@@ -457,7 +500,9 @@ class Game:
         return self.current
 
     def _end_turn(self):
-        if self.winner is not None:
+        winner = self.winner
+        if winner is not None:
+            self.current_player = self.players.index(winner)
             return
 
         start = self.current_player
