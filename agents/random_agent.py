@@ -44,7 +44,6 @@ class RandomAgent(Player):
 			self.id,
 			action,
 			target_id=target_id,
-			decision_provider=self.decide,
 		)
 
 	def decide(self, kind: str, context: dict[str, object]) -> object:

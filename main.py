@@ -1,18 +1,19 @@
 from agents.random_agent import RandomAgent
+from agents.passive_agent import PassiveAgent
 from src.game import Game
 from src.player import Player
 
 
 def main():
     players = [
-        Player("1", "Player 1"),
-        Player("2", "Player 2"),
-        Player("3", "Player 3"),
-        Player("4", "Player 4"),
-        # RandomAgent("1", "Random Agent 1", seed=1),
-        # RandomAgent("2", "Random Agent 2", seed=2),
-        # RandomAgent("3", "Random Agent 3", seed=3),
-        # RandomAgent("4", "Random Agent 4", seed=4),
+        # Player("1", "Player 1"),
+        # Player("2", "Player 2"),
+        # Player("3", "Player 3"),
+        # Player("4", "Player 4"),
+        PassiveAgent("1", "Passive Agent 1"),
+        RandomAgent("2", "Random Agent 2", seed=2),
+        RandomAgent("3", "Random Agent 3", seed=3),
+        RandomAgent("4", "Random Agent 4", seed=4),
     ]
 
     game = Game(players)

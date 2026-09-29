@@ -273,6 +273,7 @@ class Game:
                     "challenger_name": challenger.name,
                     "claimant_id": claimant.id,
                     "role": role.value,
+                    "decision_player_id": challenger.id,
                 },
             )
             if not isinstance(should_challenge, bool):
@@ -343,17 +344,33 @@ class Game:
         else:
             raise ValueError(f"Action cannot be blocked: {action}")
 
-        selection = self._decide(
-            decision_provider,
-            "block",
-            {
-                "actor_id": actor.id,
-                "action": action,
-                "target_id": target.id if target else None,
-                "eligible_blockers": [player.id for player in eligible],
-                "allowed_roles": roles,
-            },
-        )
+        selection_context = {
+            "actor_id": actor.id,
+            "action": action,
+            "target_id": target.id if target else None,
+            "eligible_blockers": [player.id for player in eligible],
+            "allowed_roles": roles,
+        }
+        blocker = None
+        if action == "foreign_aid" and decision_provider is None:
+            for candidate in eligible:
+                selection_context["decision_player_id"] = candidate.id
+                selection_context["eligible_blockers"] = [candidate.id]
+                selection = self._decide(None, "block", selection_context)
+                if selection is not None:
+                    blocker = candidate
+                    break
+            else:
+                self._record_event("No one blocks foreign aid.")
+                return False
+        else:
+            if action != "foreign_aid":
+                selection_context["decision_player_id"] = target.id
+            selection = self._decide(
+                decision_provider,
+                "block",
+                selection_context,
+            )
         if selection is None:
             self._record_event(f"No one blocks {action.replace('_', ' ')}.")
             return False
@@ -361,9 +378,12 @@ class Game:
             raise ValueError("A block decision must be None or a block mapping.")
 
         blocker_id = selection.get("blocker_id")
-        blocker = self._get_player(blocker_id) if isinstance(blocker_id, str) else None
+        if blocker is None:
+            blocker = self._get_player(blocker_id) if isinstance(blocker_id, str) else None
         if blocker is None or blocker not in eligible or not blocker.alive:
             raise ValueError("That player cannot block this action.")
+        if action == "foreign_aid" and blocker_id != blocker.id:
+            raise ValueError("A player can only submit their own block.")
 
         if action == "foreign_aid":
             block_role = Role.DUKE
@@ -484,6 +504,13 @@ class Game:
     ) -> object:
         if decision_provider is not None:
             return decision_provider(kind, context)
+
+        player_id = context.get("decision_player_id", context.get("player_id"))
+        if isinstance(player_id, str):
+            player = self._get_player(player_id)
+            player_decision = getattr(player, "decide", None)
+            if callable(player_decision):
+                return player_decision(kind, context)
         return self._console_decision(kind, context)
 
     def _console_decision(self, kind: str, context: dict[str, object]) -> object:

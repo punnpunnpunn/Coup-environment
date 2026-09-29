@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from agents.random_agent import RandomAgent
 from src.game import Game
@@ -29,21 +30,33 @@ class RandomAgentTests(unittest.TestCase):
         game = Game([agent, human])
         self.assertIsInstance(agent, Player)
 
-        game.current.choose_action(game)
+        def human_response(prompt):
+            if "Choose a card to reveal" in prompt:
+                return "1"
+            return "n"
+
+        with patch("builtins.input", side_effect=human_response):
+            game.current.choose_action(game)
 
         self.assertGreaterEqual(agent.coins, 0)
         self.assertEqual(game.current.id, "human")
 
     def test_agent_forces_coup_at_ten_coins(self):
-        self.players[0].coins = 10
-        influence_before = sum(player.influence for player in self.players[1:])
-        agent = RandomAgent("p1", seed=4)
+        players = [
+            RandomAgent("p1", seed=4),
+            RandomAgent("p2", seed=5),
+            RandomAgent("p3", seed=6),
+        ]
+        game = Game(players)
+        players[0].coins = 10
+        influence_before = sum(player.influence for player in players[1:])
+        agent = players[0]
 
-        agent.choose_action(self.game)
+        agent.choose_action(game)
 
-        self.assertEqual(self.players[0].coins, 3)
+        self.assertEqual(players[0].coins, 3)
         self.assertEqual(
-            sum(player.influence for player in self.players[1:]),
+            sum(player.influence for player in players[1:]),
             influence_before - 1,
         )
 
@@ -57,18 +70,17 @@ class RandomAgentTests(unittest.TestCase):
         for seed in range(5):
             with self.subTest(seed=seed):
                 players = [
-                    Player(f"p{index}", f"Player {index}") for index in range(4)
+                    RandomAgent(
+                        f"p{index}", f"Player {index}", seed=seed * 10 + index
+                    )
+                    for index in range(4)
                 ]
                 game = Game(players)
-                agents = {
-                    player.id: RandomAgent(player.id, seed=seed * 10 + index)
-                    for index, player in enumerate(players)
-                }
 
                 for _turn in range(2000):
                     if game.winner is not None:
                         break
-                    agents[game.current.id].choose_action(game)
+                    game.current.choose_action(game)
                 else:
                     self.fail(f"Seed {seed} did not finish within 2000 turns")
 
