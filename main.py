@@ -1,3 +1,4 @@
+from agents.always_duke import AlwaysDuke
 from agents.random_agent import RandomAgent
 from agents.passive_agent import PassiveAgent
 from src.game import Game
@@ -10,10 +11,10 @@ def main():
         # Player("2", "Player 2"),
         # Player("3", "Player 3"),
         # Player("4", "Player 4"),
-        PassiveAgent("1", "Passive Agent 1"),
-        RandomAgent("2", "Random Agent 2", seed=2),
-        RandomAgent("3", "Random Agent 3", seed=3),
-        RandomAgent("4", "Random Agent 4", seed=4),
+        PassiveAgent("1", "Passive Agent"),
+        RandomAgent("2", "Random Agent 1", seed=2),
+        AlwaysDuke("3", "Always Duke"),
+        AlwaysDuke("4", "Also Always Duke"),
     ]
 
     game = Game(players)
