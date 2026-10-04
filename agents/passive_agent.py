@@ -5,8 +5,8 @@ from src.player import Player
 class PassiveAgent(Player):
 	"""Take Income every turn and otherwise avoid confrontation."""
 
-	def __init__(self, player_id: str, name: str | None = None):
-		super().__init__(player_id, name or player_id)
+	def __init__(self, player_id: str, name: str | None = None, print_turns=True):
+		super().__init__(player_id, name or player_id, print_turns=print_turns)
 
 	def choose_action(self, game: Game) -> dict:
 		if game.current.id != self.id:

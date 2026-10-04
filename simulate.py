@@ -2,31 +2,22 @@ from agents.always_duke import AlwaysDuke
 from agents.honest_random import HonestRandom
 from agents.random_agent import RandomAgent
 from agents.passive_agent import PassiveAgent
+from agents.weighted_param_bot import WeightedParamBot
 from src.game import Game
 
 import random
 
 def main():
     players = [
-        PassiveAgent("1", "Passive Agent"),
-        RandomAgent("2", "Random Agent"),
-        AlwaysDuke("3", "Always Duke"),
-        HonestRandom("4", "Honest Random"),
+        WeightedParamBot("1", "Passive", bluff_percent=0, challenge_percent=0.5),
+        WeightedParamBot("2", "Random Agent", bluff_percent=0, challenge_percent=0.5),
+        WeightedParamBot("3", "Always Duke", bluff_percent=0, challenge_percent=0.5),
+        WeightedParamBot("4", "Honest Random", bluff_percent=0, challenge_percent=0),
     ]
 
-    winners = {
-        "Passive Agent": 0,
-        "Random Agent": 0,
-        "Always Duke": 0,
-        "Honest Random":0
-        }
-    order = {
-        "Passive Agent": [0,0,0,0],
-        "Random Agent": [0,0,0,0],
-        "Always Duke": [0,0,0,0],
-        "Honest Random": [0,0,0,0]
-    }
-    games = 10000
+    winners = {players[i].name: 0 for i in range(len(players))}
+    order = {players[i].name: [0,0,0,0] for i in range(len(players))}
+    games = 1000
     for _ in range(games):
         random.shuffle(players)
         for j in range(len(players)):

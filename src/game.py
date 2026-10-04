@@ -15,6 +15,7 @@ class Game:
     deck: list[Card] = field(default_factory=list)
     current_player: int = 0
     log: list[str] = field(default_factory=list)
+    print_turns: bool = True
 
     def __post_init__(self):
         if not 2 <= len(self.players) <= 6:
@@ -552,7 +553,8 @@ class Game:
         if kind == "reveal_influence":
             cards = context["cards"]
             for option, card in enumerate(cards, start=1):
-                print(f"  [{option}] {card['role']}")
+                if self.print_turns:
+                    print(f"  [{option}] {card['role']}")
             choice = input(f"Choose a card to reveal [1-{len(cards)}]: ").strip()
             while not choice.isdigit() or not 1 <= int(choice) <= len(cards):
                 choice = input(f"Invalid choice. Choose [1-{len(cards)}]: ").strip()
@@ -562,7 +564,8 @@ class Game:
             cards = context["cards"]
             keep_count = context["keep_count"]
             for option, card in enumerate(cards, start=1):
-                print(f"  [{option}] {card['role']}")
+                if self.print_turns:
+                    print(f"  [{option}] {card['role']}")
             choices = []
             for choice_number in range(keep_count):
                 choice = input(

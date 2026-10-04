@@ -13,8 +13,9 @@ class HonestRandom(Player):
 		player_id: str,
 		name: str | None = None,
 		seed: int | None = None,
+		print_turns=True,
 	):
-		super().__init__(player_id, name or player_id)
+		super().__init__(player_id, name or player_id, print_turns=print_turns)
 		self.rng = random.Random(seed)
 
 	def choose_action(self, game: Game) -> dict:
