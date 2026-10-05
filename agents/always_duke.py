@@ -60,3 +60,8 @@ class AlwaysDuke(Player):
 			return (non_dukes or cards)[0]["index"]
 
 		raise ValueError(f"Unknown decision type: {kind}")
+
+def create_always_duke(player_id: str,
+                    	name: str,
+						seed: int):
+	return AlwaysDuke(player_id, name, seed=seed, print_turns=False)

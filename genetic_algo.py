@@ -2,7 +2,11 @@ import random
 from dataclasses import dataclass
 
 from agents.weighted_param_bot import WeightedParamBot
+from agents.weighted_param_bot_v2 import WeightedParamBotV2
+from agents.passive_agent import create_passive_agent
+from agents.always_duke import create_always_duke
 from src.game import Game
+from src.player import Player
 
 
 ACTION_NAMES = (
@@ -89,7 +93,17 @@ class AntiStrategyOptimizer:
 
     def __init__(
         self,
-        target_weights: StrategyWeights,
+        target_bot_factory,
+        starting_weights: StrategyWeights = StrategyWeights(
+            income=1.0,
+            foreign_aid=1.0,
+            coup=1.0,
+            tax=1.0,
+            assassinate=1.0,
+            exchange=1.0,
+            steal=1.0,
+        ),
+        num_opponents: int = 2,
         bluff_percent: float = 0.0,
         challenge_percent: float = 0.0,
         population_size: int = 10,
@@ -114,7 +128,10 @@ class AntiStrategyOptimizer:
         if not 0 <= target_win_rate <= 1:
             raise ValueError("target_win_rate must be between 0 and 1.")
 
-        self.target_weights = target_weights.copy()
+        self.target_bot_factory = target_bot_factory
+        self.starting_weights = starting_weights
+
+        self.num_opponents = num_opponents
 
         self.bluff_percent = bluff_percent
         self.challenge_percent = challenge_percent
@@ -137,12 +154,12 @@ class AntiStrategyOptimizer:
         player_id: str,
         name: str,
         seed: int,
-    ) -> WeightedParamBot:
+    ) -> Player:
         """
         Create a WeightedParamBot from a set of strategy weights.
         """
 
-        return WeightedParamBot(
+        return WeightedParamBotV2(
             player_id=player_id,
             name=name,
             seed=seed,
@@ -234,13 +251,12 @@ class AntiStrategyOptimizer:
             )
 
             target_players = [
-                self._create_candidate(
-                    weights=self.target_weights,
+                self.target_bot_factory(
                     player_id=f"target-{i}",
                     name=f"Target {i}",
                     seed=self.rng.randrange(2**32),
                 )
-                for i in range(3)
+                for i in range(self.num_opponents)
             ]
 
             players = [
@@ -278,12 +294,12 @@ class AntiStrategyOptimizer:
         """
 
         population = [
-            self.target_weights.copy()
+            self.starting_weights.copy()
         ]
 
         while len(population) < self.population_size:
             population.append(
-                self._create_mutation(self.target_weights)
+                self._create_mutation(self.starting_weights)
             )
 
         return population
@@ -422,15 +438,28 @@ if __name__ == "__main__":
         steal=1.0,
     )
 
-    optimizer = AntiStrategyOptimizer(
-        target_weights=target,
+    start = StrategyWeights(
+        income=0.299981009486409,
+        foreign_aid=10.0,
+        coup=0.5255674038567602, 
+        tax=0.07395424978955586, 
+        assassinate=0.8607068155503209, 
+        exchange=0.42732524228008906, 
+        steal=0.4778216512613571
+    )
 
+    optimizer = AntiStrategyOptimizer(
+        target_bot_factory=create_always_duke,
+        starting_weights=start,
+
+        num_opponents = 2,
+        
         # These remain fixed during optimization.
         bluff_percent=0.5,
         challenge_percent=0.5,
 
         # Number of strategies tested per generation.
-        population_size=20,
+        population_size=10,
 
         # Number of games played by each strategy.
         games_per_candidate=1000,
@@ -440,10 +469,10 @@ if __name__ == "__main__":
         mutation_strength=0.10,
 
         # Maximum number of generations.
-        max_rounds=200,
+        max_rounds=500,
 
         # Stop early once the anti-strategy wins this often.
-        target_win_rate=0.70,
+        target_win_rate=1,
 
         seed=42,
     )

@@ -39,3 +39,11 @@ class PassiveAgent(Player):
 			return context["cards"][0]["index"]
 
 		raise ValueError(f"Unknown decision type: {kind}")
+
+def create_passive_agent(player_id: str, 
+                         name: str, 
+						 seed: int) -> PassiveAgent:
+	"""Creates an instance of PassiveAgent with given player_id 
+	and name and with print_turns set to False. Intended for use
+	in the AntiStrategyOptimizer."""
+	return PassiveAgent(player_id, name, print_turns=False)
