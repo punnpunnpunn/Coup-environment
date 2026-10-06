@@ -3,6 +3,7 @@ from genetic_adaptive_algo import AdaptiveGeneticTrainer
 
 from agents.passive_agent import PassiveAgent
 from agents.always_duke import AlwaysDuke
+from agents.honest_random import HonestRandom
 
 
 def opponent_factory(game_number, rng):
@@ -14,15 +15,13 @@ def opponent_factory(game_number, rng):
     """
 
     return [
-        # Replace these with your actual fixed Bot class.
-
         AlwaysDuke(
             "opponent1",
             "Opponent 1",
             print_turns=False,
         ),
 
-        AlwaysDuke(
+        PassiveAgent(
             "opponent2",
             "Opponent 2",
             print_turns=False,
@@ -45,7 +44,7 @@ def main():
         # Increase this for more reliable fitness estimates.
         games_per_candidate=1000,
 
-        generations=40,
+        generations=100,
 
         elite_count=3,
         tournament_size=4,
