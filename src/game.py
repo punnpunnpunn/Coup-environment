@@ -44,6 +44,13 @@ class Game:
                 self.deck.pop(),
                 self.deck.pop(),
             ]
+            player.observe(
+                "initial_hand",
+                {
+                    "player_id": player.id,
+                    "roles": [card.role.value for card in player.cards],
+                },
+            )
 
     # ------------------------------------------------------------------
     # Game state
@@ -231,6 +238,7 @@ class Game:
                 self._record_event("The Exchange claim is disproven; no cards are exchanged.")
             else:
                 self._exchange(actor, decision_provider)
+                self._notify_observers("exchange", {"player_id": actor.id})
                 self._record_event(f"{actor.name} exchanges cards with the Court.")
         elif action == "steal":
             if self._check_challenge(actor, Role.CAPTAIN, decision_provider):
@@ -282,11 +290,39 @@ class Game:
                 self._record_event(
                     f"{challenger.name} challenges {claimant.name}'s {role.value} claim."
                 )
-                return self._challenge(challenger, claimant, role, decision_provider)
+                self._notify_observers(
+                    "claim",
+                    {"claimant_id": claimant.id, "role": role.value},
+                )
+                disproven = self._challenge(
+                    challenger, claimant, role, decision_provider
+                )
+                self._notify_observers(
+                    "claim",
+                    {
+                        "claimant_id": claimant.id,
+                        "role": role.value,
+                        "disproven": disproven,
+                        "proven": not disproven,
+                    },
+                )
+                return disproven
             self._record_event(
                 f"{challenger.name} does not challenge {claimant.name}'s {role.value} claim."
             )
+        self._notify_observers(
+            "claim",
+            {
+                "claimant_id": claimant.id,
+                "role": role.value,
+                "disproven": False,
+            },
+        )
         return False
+
+    def _notify_observers(self, kind: str, context: dict[str, object]) -> None:
+        for player in self.players:
+            player.observe(kind, context)
 
     def _challenge(
         self,
@@ -415,6 +451,10 @@ class Game:
             self._record_event(
                 f"{player.name} loses influence, revealing {card.role.value}."
             )
+            self._notify_observers(
+                "reveal",
+                {"player_id": player.id, "role": card.role.value},
+            )
             return card
 
         active_cards = [
@@ -443,6 +483,10 @@ class Game:
         card = player.reveal_card(card_index)
         self._record_event(
             f"{player.name} loses influence, revealing {card.role.value}."
+        )
+        self._notify_observers(
+            "reveal",
+            {"player_id": player.id, "role": card.role.value},
         )
         return card
 

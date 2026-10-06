@@ -53,6 +53,9 @@ class Player:
             print(f"Invalid action: {e}")
             self.choose_action(game)
 
+    def observe(self, kind: str, context: dict[str, object]) -> None:
+        """Receive a public game event; agents may override this to track state."""
+        pass
 
     def reveal_card(self, index: int):
         if index < 0 or index >= len(self.cards):
