@@ -70,8 +70,8 @@ or exchange cards. If a responder is a regular `Player`, the game prompts in
 the console instead.
 
 An agent can override `observe(kind, context)` to track public game events. The
-`Believer` agent uses those events to track role claims, challenge contradictions,
-and clear a player's claim history after a successful exchange.
+`BeliefHonestRandom` agent uses those events to track role claims, challenge
+contradictions, and clear a player's claim history after a successful exchange.
 
 For example, this agent takes Income until forced to Coup, targeting a random
 living opponent:

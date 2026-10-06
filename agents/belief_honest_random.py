@@ -1,25 +1,34 @@
 import random
 
+from agents.belief import BeliefTracker
 from src.cards import Role
 from src.game import Game
 from src.player import Player
 
 
-class ParamBot(Player):
-	"""Choose actions based on random probability"""
+class BeliefHonestRandom(Player):
+	"""Honest Random with Beliefs"""
 
 	def __init__(
 		self,
 		player_id: str,
 		name: str | None = None,
 		seed: int | None = None,
-		bluff_percent: float = 0,
-		challenge_percent: float = 0,
 	):
 		super().__init__(player_id, name or player_id)
 		self.rng = random.Random(seed)
-		self.bluff_percent = bluff_percent
-		self.challenge_percent = challenge_percent
+		self.belief_tracker = BeliefTracker(player_id)
+
+	def observe(self, kind: str, context: dict[str, object]) -> None:
+		self.belief_tracker.observe(kind, context)
+		if kind == "initial_hand" or (
+			kind == "exchange" and context.get("player_id") == self.id
+		) or (kind == "reveal" and context.get("player_id") == self.id) or (
+			kind == "claim" and context.get("claimant_id") == self.id
+		):
+			self.belief_tracker.sync_own_cards(
+				[card.role for card in self.cards]
+			)
 
 	def choose_action(self, game: Game) -> dict:
 		if game.current.id != self.id:
@@ -29,26 +38,18 @@ class ParamBot(Player):
 		if self.coins >= 10:
 			action = "coup"
 		else:
-			actions = ["income", "foreign_aid", "tax", "exchange", "steal"]
-			honest_actions = ["income", "foreign_aid"]
+			actions = ["income", "foreign_aid"]
 			if Role.DUKE in roles:
-				honest_actions.append("tax")
+				actions.append("tax")
 			if Role.ASSASSIN in roles and self.coins >= 3:
-				honest_actions.append("assassinate")
-			if self.coins >= 3:
 				actions.append("assassinate")
 			if Role.AMBASSADOR in roles:
-				honest_actions.append("exchange")
+				actions.append("exchange")
 			if Role.CAPTAIN in roles:
-				honest_actions.append("steal")
+				actions.append("steal")
 			if self.coins >= 7:
-				honest_actions.append("coup")
 				actions.append("coup")
-				
-			if self.rng.random() < self.bluff_percent:
-				action =self.rng.choice(actions)
-			else:
-				action = self.rng.choice(honest_actions)
+			action = self.rng.choice(actions)
 
 		target_id = None
 		if action in ("coup", "assassinate", "steal"):
@@ -65,10 +66,9 @@ class ParamBot(Player):
 
 	def decide(self, kind: str, context: dict[str, object]) -> object:
 		if kind == "challenge":
-			if self.rng.random() < self.challenge_percent:
-				return True
-			else:
-				return False
+			return self.belief_tracker.contradicts(
+					context["claimant_id"], context["role"]
+				)
 
 		if kind == "block":
 			roles = {card.role.value for card in self.cards if not card.revealed}
@@ -76,17 +76,13 @@ class ParamBot(Player):
 				return None
 
 			if context["action"] == "foreign_aid":
-				if Role.DUKE.value not in roles and self.rng.random() > self.bluff_percent:
+				if Role.DUKE.value not in roles:
 					return None
 				return {"blocker_id": self.id}
 
 			claimable_roles = [
 				role for role in context["allowed_roles"] if role in roles
 			]
-			if self.rng.random() < self.bluff_percent:
-				role = self.rng.choice(context["allowed_roles"])
-				return {"blocker_id": self.id, "role": role}
-			
 			if not claimable_roles:
 				return None
 
@@ -94,7 +90,6 @@ class ParamBot(Player):
 				"blocker_id": self.id,
 				"role": self.rng.choice(claimable_roles),
 			}
-		
 
 		if kind == "reveal_influence":
 			return self.rng.choice(context["cards"])["index"]

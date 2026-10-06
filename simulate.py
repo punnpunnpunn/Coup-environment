@@ -1,5 +1,5 @@
 from agents.always_duke import AlwaysDuke
-from agents.believer import Believer
+from agents.belief_honest_random import BeliefHonestRandom
 from agents.duke_fish import DukeFish
 from agents.honest_random import HonestRandom
 from agents.random_agent import RandomAgent
@@ -11,21 +11,21 @@ import random
 def main():
     players = [
         PassiveAgent("Passive Agent"),
-        RandomAgent("Random Agent"),
-        Believer("Believer"),
+        HonestRandom("Honest Random"),
+        BeliefHonestRandom("Belief Honest Random"),
         DukeFish("Duke Fish"),
     ]
 
     winners = {
         "Passive Agent": 0,
-        "Random Agent": 0,
-        "Believer": 0,
+        "Honest Random": 0,
+        "Belief Honest Random": 0,
         "Duke Fish": 0
         }
     order = {
         "Passive Agent": [0,0,0,0],
-        "Random Agent": [0,0,0,0],
-        "Believer": [0,0,0,0],
+        "Honest Random": [0,0,0,0],
+        "Belief Honest Random": [0,0,0,0],
         "Duke Fish": [0,0,0,0]
     }
     games = 10000
