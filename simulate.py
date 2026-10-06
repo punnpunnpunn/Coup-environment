@@ -20,19 +20,12 @@ def main():
         "Passive Agent": 0,
         "Honest Random": 0,
         "Belief Honest Random": 0,
-        "Duke Fish": 0
+        "Duke Fish": 0,
         }
-    order = {
-        "Passive Agent": [0,0,0,0],
-        "Honest Random": [0,0,0,0],
-        "Belief Honest Random": [0,0,0,0],
-        "Duke Fish": [0,0,0,0]
-    }
+
     games = 10000
     for _ in range(games):
         random.shuffle(players)
-        for j in range(len(players)):
-            order[players[j].name][j] += 1
         game = Game(players)
         displayed_log_length = 0
 
@@ -48,7 +41,6 @@ def main():
         winners[game.winner.name] += 1
 
     print("\nNumber of wins:", winners)
-    print("Turn order Amounts:", order)
     print("Win percentages")
     for i in winners:
         print(f"{i}: {winners[i]/games}")

@@ -11,6 +11,12 @@ class BeliefTracker:
 		self.claim_order: dict[str, list[Role]] = {}
 
 	def observe(self, kind: str, context: dict[str, object]) -> None:
+		if kind == "new_game":
+			self.beliefs.clear()
+			self.known_beliefs.clear()
+			self.claim_order.clear()
+			return
+
 		if kind == "initial_hand":
 			player_id = context["player_id"]
 			roles = context["roles"]

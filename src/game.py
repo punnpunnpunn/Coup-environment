@@ -22,6 +22,7 @@ class Game:
         if len({player.id for player in self.players}) != len(self.players):
             raise ValueError("Player IDs must be unique.")
 
+        self._notify_observers("new_game", {})
         self._create_deck()
         self._deal_cards()
 
