@@ -102,8 +102,6 @@ def main():
     games = 50000
     for i in range(games):
         random.shuffle(players)
-        for j in range(len(players)):
-            order[players[j].name][j] += 1
         game = Game(players)
 
         while game.winner is None:
@@ -120,7 +118,6 @@ def main():
                 print(f"{k}: {winners[k]/(i+1)}")
 
     print("\nNumber of wins:", winners)
-    print("Turn order Amounts:", order)
     print("Win percentages")
     for i in winners:
         print(f"{i}: {winners[i]/games}")

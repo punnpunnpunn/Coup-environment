@@ -169,6 +169,32 @@ class BelieverTests(unittest.TestCase):
 			[card.role for card in agent.cards],
 		)
 
+	def test_new_game_resets_beliefs_when_agents_are_reused(self):
+		agent = BeliefHonestRandom("p1", seed=1)
+		opponent = Player("p2", "Opponent")
+		Game([agent, opponent])
+		agent.belief_tracker.add_belief(opponent.id, Role.DUKE)
+		agent.belief_tracker.observe(
+			"claim",
+			{"claimant_id": opponent.id, "role": Role.ASSASSIN.value},
+		)
+
+		Game([agent, opponent])
+
+		self.assertEqual(
+			agent.belief_tracker.beliefs,
+			{
+				agent.id: [card.role for card in agent.cards],
+			},
+		)
+		self.assertEqual(
+			agent.belief_tracker.known_beliefs,
+			{
+				agent.id: [card.role for card in agent.cards],
+			},
+		)
+		self.assertEqual(agent.belief_tracker.claim_order, {agent.id: []})
+
 	def test_initial_hand_keeps_duplicate_known_copies(self):
 		self.agent.belief_tracker.observe(
 			"initial_hand",
