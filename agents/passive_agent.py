@@ -5,8 +5,8 @@ from src.player import Player
 class PassiveAgent(Player):
 	"""Take Income every turn and otherwise avoid confrontation."""
 
-	def __init__(self, player_id: str, name: str | None = None):
-		super().__init__(player_id, name or player_id)
+	def __init__(self, player_id: str, name: str | None = None, print_turns=True):
+		super().__init__(player_id, name or player_id, print_turns=print_turns)
 
 	def choose_action(self, game: Game) -> dict:
 		if game.current.id != self.id:
@@ -39,3 +39,11 @@ class PassiveAgent(Player):
 			return context["cards"][0]["index"]
 
 		raise ValueError(f"Unknown decision type: {kind}")
+
+def create_passive_agent(player_id: str, 
+                         name: str, 
+						 seed: int) -> PassiveAgent:
+	"""Creates an instance of PassiveAgent with given player_id 
+	and name and with print_turns set to False. Intended for use
+	in the AntiStrategyOptimizer."""
+	return PassiveAgent(player_id, name, print_turns=False)

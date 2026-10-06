@@ -8,8 +8,8 @@ from src.player import Player
 class AlwaysDuke(Player):
 	"""Claims duke every turn and otherwise blocks everything"""
 
-	def __init__(self, player_id: str, name: str | None = None, seed: int | None = None):
-		super().__init__(player_id, name or player_id)
+	def __init__(self, player_id: str, name: str | None = None, seed: int | None = None, print_turns=True):
+		super().__init__(player_id, name or player_id, print_turns=print_turns)
 		self.rng = random.Random(seed)
 
 	def choose_action(self, game: Game) -> dict:
@@ -60,3 +60,8 @@ class AlwaysDuke(Player):
 			return (non_dukes or cards)[0]["index"]
 
 		raise ValueError(f"Unknown decision type: {kind}")
+
+def create_always_duke(player_id: str,
+                    	name: str,
+						seed: int):
+	return AlwaysDuke(player_id, name, seed=seed, print_turns=False)

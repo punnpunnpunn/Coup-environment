@@ -15,8 +15,9 @@ class ParamBot(Player):
 		seed: int | None = None,
 		bluff_percent: float = 0,
 		challenge_percent: float = 0,
+		print_turns: bool = True
 	):
-		super().__init__(player_id, name or player_id)
+		super().__init__(player_id, name or player_id, print_turns=print_turns)
 		self.rng = random.Random(seed)
 		self.bluff_percent = bluff_percent
 		self.challenge_percent = challenge_percent
