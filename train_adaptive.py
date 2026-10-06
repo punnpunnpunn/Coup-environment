@@ -4,6 +4,8 @@ from genetic_adaptive_algo import AdaptiveGeneticTrainer
 from agents.passive_agent import PassiveAgent
 from agents.always_duke import AlwaysDuke
 from agents.honest_random import HonestRandom
+from agents.duke_fish import DukeFish
+from agents.belief_honest_random import BeliefHonestRandom
 
 
 def opponent_factory(game_number, rng):
@@ -15,19 +17,19 @@ def opponent_factory(game_number, rng):
     """
 
     return [
-        AlwaysDuke(
+        BeliefHonestRandom(
             "opponent1",
             "Opponent 1",
             print_turns=False,
         ),
 
-        PassiveAgent(
+        BeliefHonestRandom(
             "opponent2",
             "Opponent 2",
             print_turns=False,
         ),
 
-        AlwaysDuke(
+        BeliefHonestRandom(
             "opponent3",
             "Opponent 3",
             print_turns=False,

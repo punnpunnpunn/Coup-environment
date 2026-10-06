@@ -14,8 +14,9 @@ class BeliefHonestRandom(Player):
 		player_id: str,
 		name: str | None = None,
 		seed: int | None = None,
+		print_turns: bool = True
 	):
-		super().__init__(player_id, name or player_id)
+		super().__init__(player_id, name or player_id, print_turns=print_turns)
 		self.rng = random.Random(seed)
 		self.belief_tracker = BeliefTracker(player_id)
 
