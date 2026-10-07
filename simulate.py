@@ -1,3 +1,4 @@
+from agents.aggressive_belief import AggressiveBelief
 from agents.always_duke import AlwaysDuke
 from agents.belief_honest_random import BeliefHonestRandom
 from agents.duke_fish import DukeFish
@@ -11,14 +12,14 @@ import random
 def main():
     players = [
         PassiveAgent("Passive Agent"),
-        HonestRandom("Honest Random"),
+        AggressiveBelief("Aggressive Belief"),
         BeliefHonestRandom("Belief Honest Random"),
         DukeFish("Duke Fish"),
     ]
 
     winners = {
         "Passive Agent": 0,
-        "Honest Random": 0,
+        "Aggressive Belief": 0,
         "Belief Honest Random": 0,
         "Duke Fish": 0,
         }
